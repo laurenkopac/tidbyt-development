@@ -11,14 +11,26 @@ load("encoding/json.star", "json")
 load("http.star", "http")
 load("render.star", "render")
 load("schema.star", "schema")
-load("time.star", "time")
 load("re.star", "re")
 
 POKEAPI_URL = "https://pokeapi.co/api/v2/pokemon/{}"
 REGIONAL_DEX_ID = "regional_dex_code"
 CACHE_TTL_SECONDS = 3600 * 24 * 7  # 7 days in seconds.
 
+def get_regions():
+    regions = ["National", "Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola"]
+    region_options = []
+    for x in regions:
+        region_options.append(
+            schema.Option(
+                display = x,
+                value = x,
+            ),
+        )
+    return region_options
+
 def get_schema():
+    regions = get_regions()
     return schema.Schema(
         version = "1",
         fields = [
@@ -27,17 +39,8 @@ def get_schema():
                 name = "Regional Pokedex",
                 desc = "Which Pokedex do you want to pull from?",
                 icon = "book",
-                default = "National",
-                options = [
-                schema.Option(display = "National", value='National'),
-                schema.Option(display = "Kanto", value='Kanto'),
-                schema.Option(display = "Johto", value='Johto'),
-                schema.Option(display = "Hoenn", value='Hoenn'),
-                schema.Option(display = "Sinnoh", value='Sinnoh'),
-                schema.Option(display = "Unova", value='Unova'),
-                schema.Option(display = "Kalos", value='Kalos'),
-                schema.Option(display = "Alola", value='Alola'),
-                ],
+                default = regions[0].value,
+                options = regions,
             ),
         ],
     )
@@ -46,44 +49,39 @@ def main(config):
     MIN = "1"
     MAX = "809"
     dex_region = config.get(REGIONAL_DEX_ID)
-    if dex_region == 'National':
+    if dex_region == "National":
         pass
-    elif dex_region == 'Kanto':
+    elif dex_region == "Kanto":
         MIN = "1"
         MAX = "151"
-    elif dex_region == 'Johto':
+    elif dex_region == "Johto":
         MIN = "152"
         MAX = "251"
-    elif dex_region == 'Hoenn':
+    elif dex_region == "Hoenn":
         MIN = "252"
         MAX = "386"
-    elif dex_region == 'Sinnoh':
+    elif dex_region == "Sinnoh":
         MIN = "387"
         MAX = "493"
-    elif dex_region == 'Unova':
+    elif dex_region == "Unova":
         MIN = "494"
         MAX = "649"
-    elif dex_region == 'Kalos':
+    elif dex_region == "Kalos":
         MIN = "650"
         MAX = "721"
-    elif dex_region == 'Alola':
+    elif dex_region == "Alola":
         MIN = "722"
         MAX = "809"
     else:
-      pass
-    resp = http.get("https://www.random.org/integers/?num=1&min="+MIN+"&max="+MAX+"&col=1&base=10&format=plain&rnd=new1")
+        pass
+    resp = http.get("https://www.random.org/integers/?num=1&min=" + MIN + "&max=" + MAX + "&col=1&base=10&format=plain&rnd=new1")
     if resp.status_code != 200:
-  		fail("Request failed with status %d", resp.status_code)
+        fail("Request failed with status %d", resp.status_code)
     dex_number = resp.body()
-    dex_number = re.sub("\n","",dex_number)
+    dex_number = re.sub("\n", "", dex_number)
     id_ = dex_number
     pokemon = get_pokemon(id_)
     name = pokemon["name"].title()
-    height = pokemon["height"] / 10
-    height = "%s ft" % round(height * 3.281)
-    weight = pokemon["weight"] / 10
-    weight = "%s lbs" % round(weight * 2.205)
-    ability = pokemon["abilities"][0]["ability"]["name"]
 
     sprite_url = pokemon["sprites"]["versions"]["generation-vii"]["icons"]["front_default"]
     sprite = get_cachable_data(sprite_url)
@@ -116,13 +114,13 @@ def main(config):
                                 ],
                             ),
                             width = 64,
-                            scroll_direction = "horizontal"
-                          ),
+                            scroll_direction = "horizontal",
+                        ),
                     ),
                 ],
-          ),
+            ),
         ),
-      )
+    )
 
 def round(num):
     """Rounds floats to a single decimal place."""
